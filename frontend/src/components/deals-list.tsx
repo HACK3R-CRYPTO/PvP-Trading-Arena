@@ -1,0 +1,180 @@
+'use client'
+
+import { api } from '@/lib/api'
+import { formatTokenAmount } from '@/lib/format'
+import Link from 'next/link'
+import { useEffect, useState } from 'react'
+
+type ViewMode = 'all' | 'p2p'
+
+interface Deal {
+  id: string
+  txHash?: string
+  regime?: string
+  chainId?: number
+  fromToken: string
+  toToken: string
+  fromAmount: string
+  toAmount: string
+  fromTokenDecimals: number
+  toTokenDecimals: number
+  botAddress: string
+  botEnsName?: string | null
+  status: string
+  createdAt: string
+}
+
+interface DealsListProps {
+  viewMode: ViewMode
+  botAddress?: string | null
+  botLabel?: string | null
+}
+
+export function DealsList({ viewMode, botAddress, botLabel }: DealsListProps) {
+  const [deals, setDeals] = useState<Deal[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchDeals() {
+      try {
+        const params = new URLSearchParams()
+        if (botAddress) params.set('botAddress', botAddress)
+
+        const res = await api.get(`/api/deals?${params.toString()}`)
+        setDeals(res.data.deals || [])
+      } catch (error) {
+        console.error('Failed to fetch deals:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    setLoading(true)
+    fetchDeals()
+    const interval = setInterval(fetchDeals, 10000)
+    return () => clearInterval(interval)
+  }, [botAddress])
+
+  const filteredDeals = (viewMode === 'p2p'
+    ? deals.filter((d) => d.regime === 'p2p' || (botAddress && d.regime === 'p2p-post' && d.status === 'completed'))
+    : deals.filter((d) => botAddress || d.regime !== 'p2p-post')
+  ).filter((d) => botAddress || d.status !== 'failed')
+
+  function timeAgo(dateString: string) {
+    const seconds = Math.floor((Date.now() - new Date(dateString).getTime()) / 1000)
+    if (seconds < 60) return `${seconds} secs ago`
+    const minutes = Math.floor(seconds / 60)
+    if (minutes < 60) return `${minutes} min ago`
+    const hours = Math.floor(minutes / 60)
+    if (hours < 24) return `${hours}h ago`
+    const days = Math.floor(hours / 24)
+    return `${days}d ago`
+  }
+
+  function truncateAddress(addr: string) {
+    if (addr.length <= 12) return addr
+    return `${addr.slice(0, 6)}...${addr.slice(-4)}`
+  }
+
+  function regimeLabel(regime?: string) {
+    if (!regime) return 'P2P'
+    if (regime.startsWith('lifi')) return 'LI.FI'
+    return 'P2P'
+  }
+
+  function regimeStyle(regime?: string) {
+    if (regime && regime.startsWith('lifi')) {
+      return 'bg-purple-500/20 text-purple-400 border-purple-500/30'
+    }
+    return 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+  }
+
+  const headerText = botLabel
+    ? `Trades for ${botLabel.includes('.') ? botLabel : truncateAddress(botLabel)}`
+    : 'Latest Trades'
+
+  return (
+    <div className="w-full">
+      {/* Header */}
+      <div className="flex items-center justify-between px-2 py-2 mb-2">
+        <span className="text-xs text-muted-foreground font-mono">
+          {filteredDeals.length} {viewMode === 'p2p' ? 'P2P' : 'total'} trades
+        </span>
+      </div>
+
+      {/* List */}
+      <div className="divide-y divide-border">
+        {loading ? (
+          <div className="text-center text-muted-foreground py-12">Loading...</div>
+        ) : filteredDeals.length === 0 ? (
+          <div className="text-center text-muted-foreground py-12">
+            No {viewMode === 'p2p' ? 'P2P ' : ''}trades yet
+          </div>
+        ) : (
+          filteredDeals.slice(0, 10).map((deal) => (
+            <Link
+              key={deal.id}
+              href={`/deals/${deal.id}`}
+              className="block px-2 py-3 hover:bg-white/5 transition-colors rounded border-b border-white/5 last:border-0"
+            >
+              <div className="flex items-center gap-4">
+                {/* Status icon */}
+                <div className={`w-8 h-8 rounded flex-shrink-0 flex items-center justify-center text-xs font-bold ${deal.status === 'completed' ? 'bg-green-500/20 text-green-500' : deal.status === 'failed' ? 'bg-red-500/20 text-red-500' : 'bg-yellow-500/20 text-yellow-500'
+                  }`}>
+                  {deal.status === 'completed' ? '✓' : deal.status === 'failed' ? '✗' : '⏳'}
+                </div>
+
+                {/* Swap pair + bot identity */}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-foreground text-sm">
+                      {deal.fromToken} → {deal.toToken}
+                    </span>
+                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border ${regimeStyle(deal.regime)}`}>
+                      {regimeLabel(deal.regime)}
+                    </span>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {deal.botEnsName ? (
+                      <a
+                        href={`https://sepolia.app.ens.domains/${deal.botEnsName}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-primary hover:underline"
+                      >
+                        {deal.botEnsName}
+                      </a>
+                    ) : (
+                      truncateAddress(deal.botAddress)
+                    )} · {timeAgo(deal.createdAt)}
+                  </div>
+                </div>
+
+                {/* Amount */}
+                <div className="text-right flex-shrink-0">
+                  <div className="font-mono text-sm">
+                    {formatTokenAmount(deal.fromAmount, deal.fromTokenDecimals)} {deal.fromToken}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    → {deal.toAmount ? formatTokenAmount(deal.toAmount, deal.toTokenDecimals) : '...'} {deal.toToken}
+                  </div>
+                </div>
+              </div>
+            </Link>
+          ))
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className="px-4 py-3 border-t border-border">
+        <Link
+          href={botAddress ? `/deals?botAddress=${botAddress}` : '/deals'}
+          className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center justify-center gap-1"
+        >
+          VIEW ALL TRADES →
+        </Link>
+      </div>
+    </div>
+  )
+}

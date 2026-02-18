@@ -1,0 +1,109 @@
+@import "tailwindcss";
+
+/* @plugin "tailwindcss-animate"; */
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --background: oklch(0.1 0 0);
+  /* #050505 approx */
+  --foreground: oklch(0.9 0 0);
+  /* #e0e0e0 approx */
+  --card: oklch(0.12 0 0);
+  /* #0a0a0a approx */
+  --card-foreground: oklch(0.9 0 0);
+  --popover: oklch(0.12 0 0);
+  --popover-foreground: oklch(0.9 0 0);
+  --primary: oklch(0.6 0.2 290);
+  /* Neon Purple #8b5cf6 */
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.25 0 0);
+  --secondary-foreground: oklch(0.9 0 0);
+  --muted: oklch(0.2 0 0);
+  --muted-foreground: oklch(0.6 0 0);
+  --accent: oklch(0.6 0.2 290);
+  --accent-foreground: oklch(1 0 0);
+  --destructive: oklch(0.6 0.2 20);
+  --destructive-foreground: oklch(1 0 0);
+  --border: oklch(0.2 0 0);
+  --input: oklch(0.2 0 0);
+  --ring: oklch(0.6 0.2 290);
+  --radius: 0.5rem;
+
+  /* Cyberpunk Custom Colors */
+  --neon-cyan: #00d4ff;
+  --neon-purple: #8b5cf6;
+  --neon-green: #10b981;
+}
+
+body {
+  background-color: #050505;
+  color: #e0e0e0;
+  font-family: 'Inter', system-ui, sans-serif;
+  background-image: radial-gradient(circle at 50% 0%, #1a1a2e 0%, #050505 60%);
+  min-height: 100vh;
+}
+
+/* --- TYPOGRAPHY --- */
+h1,
+h2,
+h3,
+h4,
+.font-cyber {
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: -0.02em;
+}
+
+/* --- UTILITIES --- */
+.text-neon-cyan {
+  color: var(--neon-cyan);
+}
+
+.text-neon-purple {
+  color: var(--neon-purple);
+}
+
+.text-neon-green {
+  color: var(--neon-green);
+}
+
+.glass-panel {
+  background: rgba(10, 10, 15, 0.6);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.glass-card {
+  background: #0a0a0a;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.2s ease;
+}
+
+.glass-card:hover {
+  border-color: rgba(139, 92, 246, 0.5);
+  /* Purple Glow */
+  box-shadow: 0 0 15px rgba(139, 92, 246, 0.1);
+}
+
+.btn-cyber {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all 0.2s;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius);
+}
+
+.btn-primary {
+  background: #8b5cf6;
+  color: white;
+  box-shadow: 0 0 10px rgba(139, 92, 246, 0.3);
+}
+
+.btn-primary:hover {
+  background: #7c3aed;
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.5);
+  transform: translateY(-1px);
+}
